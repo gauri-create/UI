@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Life of Pea — An Unlikely Developer</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=Crimson+Pro:ital,wght@0,400;1,400;1,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<style>
+:root {
+  --green:#00ff88;--amber:#ffb347;--red:#ff4444;--blue:#44aaff;
+  --dark:#0a0a0f;--darker:#06060a;--card:#111118;--border:#222230;
+  --text:#cccce0;--dim:#666680;--pea:#7ed856;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--dark);color:var(--text);font-family:'Space Mono',monospace;overflow-x:hidden;cursor:none;}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);pointer-events:none;z-index:9000;}
+
+/* CURSOR */
+.cursor{width:10px;height:10px;background:var(--green);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:screen;}
+.cursor-ring{width:32px;height:32px;border:1px solid var(--green);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);opacity:.5;transition:all .15s;}
+
+.progress-bar{position:fixed;top:0;left:0;height:2px;background:var(--green);z-index:1000;box-shadow:0 0 10px var(--green);}
+
+nav{position:fixed;top:20px;right:24px;z-index:500;display:flex;flex-direction:column;gap:8px;align-items:flex-end;}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:var(--border);cursor:pointer;transition:all .3s;position:relative;}
+.nav-dot::after{content:attr(data-label);position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:9px;letter-spacing:.15em;color:var(--dim);white-space:nowrap;opacity:0;transition:opacity .2s;text-transform:uppercase;}
+.nav-dot:hover::after,.nav-dot.active::after{opacity:1;}
+.nav-dot.active{background:var(--green);box-shadow:0 0 8px var(--green);}
+
+/* ===== PEA CHARACTER ===== */
+#pea-character{position:fixed;bottom:20px;left:20px;z-index:800;display:flex;flex-direction:column;align-items:flex-start;gap:0;pointer-events:none;transition:transform .6s cubic-bezier(.34,1.56,.64,1);}
+
+.speech-bubble{background:var(--card);border:1.5px solid var(--green);border-radius:12px 12px 12px 2px;padding:10px 14px;font-size:11px;color:var(--green);max-width:220px;line-height:1.6;margin-bottom:8px;opacity:0;transform:translateY(6px) scale(.95);transition:opacity .4s,transform .4s;box-shadow:0 4px 20px rgba(0,255,136,.15);position:relative;}
+.speech-bubble.visible{opacity:1;transform:translateY(0) scale(1);}
+.speech-bubble::after{content:'';position:absolute;bottom:-8px;left:16px;border-left:8px solid transparent;border-top:8px solid var(--green);}
+.speech-bubble::before{content:'';position:absolute;bottom:-6px;left:17px;border-left:7px solid transparent;border-top:7px solid var(--card);z-index:1;}
+
+.pea-wrapper{width:72px;height:88px;position:relative;}
+
+/* SVG animations */
+@keyframes peaBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes eyeBlink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@keyframes armIdle{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-8deg)}}
+@keyframes armType{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+@keyframes armCoffee{0%,100%{transform:rotate(-12deg)}50%{transform:rotate(8deg)}}
+@keyframes legSwing{0%,100%{transform:rotate(18deg)}50%{transform:rotate(-18deg)}}
+@keyframes legSwingR{0%,100%{transform:rotate(-18deg)}50%{transform:rotate(18deg)}}
+@keyframes steamRise{0%{opacity:0;transform:translateY(0) scaleX(1)}50%{opacity:.6}100%{opacity:0;transform:translateY(-10px) scaleX(1.5)}}
+@keyframes zzFloat{0%{opacity:0;transform:translate(0,0) scale(.5)}50%{opacity:1;transform:translate(6px,-10px) scale(1)}100%{opacity:0;transform:translate(12px,-22px) scale(.8)}}
+@keyframes celebrate{0%,100%{transform:translateY(0) rotate(0deg)}25%{transform:translateY(-8px) rotate(-5deg)}75%{transform:translateY(-8px) rotate(5deg)}}
+@keyframes glassesIn{from{opacity:0}to{opacity:1}}
+
+.pea-body{animation:peaBounce 1.8s ease-in-out infinite;}
+.pea-eye-l{animation:eyeBlink 4s ease infinite;transform-origin:24px 26px;}
+.pea-eye-r{animation:eyeBlink 4s ease infinite .5s;transform-origin:40px 26px;}
+.pea-arm-r{animation:armIdle 2s ease-in-out infinite;transform-origin:48px 40px;}
+.pea-leg-l{animation:legSwing .7s ease-in-out infinite;transform-origin:28px 63px;}
+.pea-leg-r{animation:legSwingR .7s ease-in-out infinite;transform-origin:36px 63px;}
+.steam{animation:steamRise 1.8s ease infinite;}
+.steam2{animation:steamRise 1.8s ease .6s infinite;}
+.zzz{position:absolute;font-size:11px;color:var(--dim);animation:zzFloat 2s ease infinite;display:none;pointer-events:none;}
+
+/* State overrides */
+.state-typing .pea-arm-r{animation:armType .25s linear infinite;}
+.state-typing .pea-body{animation:peaBounce 1s ease-in-out infinite;}
+.state-coffee .pea-arm-r{animation:armCoffee .5s ease infinite;}
+.state-sleeping .pea-body{animation:none;}
+.state-sleeping .pea-arm-r{animation:none;}
+.state-sleeping .pea-leg-l{animation:none;}
+.state-sleeping .pea-leg-r{animation:none;}
+.state-sleeping .zzz{display:block;}
+.state-celebrating .pea-body{animation:celebrate .4s ease-in-out infinite;}
+
+/* SECTIONS */
+section{min-height:100vh;position:relative;overflow:hidden;}
+#hero{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:var(--darker);}
+.hero-bg{position:absolute;inset:0;overflow:hidden;}
+.floating-code{position:absolute;font-size:11px;color:var(--border);white-space:nowrap;animation:floatCode linear infinite;pointer-events:none;}
+@keyframes floatCode{from{transform:translateY(110vh);opacity:0}10%,90%{opacity:1}to{transform:translateY(-10vh);opacity:0}}
+.hero-content{position:relative;z-index:2;max-width:700px;padding:2rem;}
+.hero-eyebrow{font-size:10px;letter-spacing:.4em;color:var(--green);text-transform:uppercase;margin-bottom:1.5rem;opacity:0;}
+.hero-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(4rem,12vw,9rem);line-height:.9;color:#fff;opacity:0;}
+.hero-title span{color:var(--green);display:block;text-shadow:0 0 40px rgba(0,255,136,.4);}
+.hero-sub{font-family:'Crimson Pro',serif;font-style:italic;font-size:1.3rem;color:var(--dim);margin-top:1.5rem;opacity:0;}
+.tcursor{display:inline-block;width:3px;height:1em;background:var(--green);margin-left:4px;animation:blink 1s step-end infinite;vertical-align:text-bottom;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.scroll-hint{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;opacity:0;animation:fiu 1s ease 2.5s forwards;}
+@keyframes fiu{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.scroll-hint span{font-size:9px;letter-spacing:.3em;color:var(--dim);text-transform:uppercase;}
+.scroll-line{width:1px;height:40px;background:linear-gradient(to bottom,var(--green),transparent);animation:sp 2s ease infinite;}
+@keyframes sp{0%,100%{opacity:.3}50%{opacity:1}}
+
+.section-label{font-size:9px;letter-spacing:.5em;color:var(--green);text-transform:uppercase;margin-bottom:1rem;}
+.section-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.5rem,6vw,5rem);line-height:1;color:#fff;margin-bottom:1.5rem;}
+.section-body{font-family:'Crimson Pro',serif;font-size:1.2rem;line-height:1.8;color:var(--text);}
+
+#innocent{background:#0d0d1a;display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:4rem;padding:6rem clamp(2rem,8vw,8rem);}
+.terminal-window{background:#0a0a12;border:1px solid var(--border);border-radius:8px;overflow:hidden;font-size:13px;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+.terminal-header{background:#1a1a28;padding:10px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);}
+.dot{width:10px;height:10px;border-radius:50%;}
+.dot.r{background:#ff5f57}.dot.y{background:#febc2e}.dot.g{background:#28c840}
+.terminal-title{margin:0 auto;font-size:10px;color:var(--dim);letter-spacing:.1em;}
+.terminal-body{padding:1.5rem;line-height:2;}
+.t-p{color:var(--green)}.t-s{color:var(--green)}.t-e{color:var(--red)}.t-d{color:var(--dim)}
+.run-btn{display:inline-flex;align-items:center;gap:8px;margin-top:1.5rem;padding:10px 20px;background:transparent;border:1px solid var(--green);color:var(--green);font-family:'Space Mono',monospace;font-size:12px;cursor:pointer;letter-spacing:.1em;transition:all .2s;position:relative;overflow:hidden;}
+.run-btn::before{content:'';position:absolute;inset:0;background:var(--green);transform:translateX(-100%);transition:transform .2s;z-index:-1;}
+.run-btn:hover::before{transform:translateX(0)}.run-btn:hover{color:var(--dark);}
+
+#struggle{background:#100a0a;padding:6rem clamp(2rem,8vw,8rem);}
+.struggle-grid{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:start;margin-top:3rem;}
+.error-stack{background:#1a0a0a;border:1px solid #ff444433;border-left:3px solid var(--red);padding:1.5rem;font-size:12px;line-height:2;border-radius:4px;}
+.relatable-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.rcard{background:var(--card);border:1px solid var(--border);padding:1.2rem;border-radius:6px;font-size:12px;color:var(--dim);cursor:pointer;transition:all .25s;position:relative;overflow:hidden;}
+.rcard::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,255,136,.05),transparent);opacity:0;transition:opacity .25s;}
+.rcard:hover{border-color:var(--green);color:var(--text);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,255,136,.1);}
+.rcard:hover::before{opacity:1;}
+.rcard-emoji{font-size:1.5rem;margin-bottom:.5rem;display:block;}
+.rcard-text{font-family:'Crimson Pro',serif;font-size:14px;}
+
+#grind{background:#080d10;padding:6rem clamp(2rem,8vw,8rem);}
+.grind-layout{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;margin-top:3rem;}
+.timeline{display:flex;flex-direction:column;}
+.tl-item{display:flex;gap:1rem;padding-bottom:2rem;opacity:0;transform:translateX(-20px);transition:all .4s;}
+.tl-item.visible{opacity:1;transform:translateX(0);}
+.tl-line{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
+.tl-dot{width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);margin-top:4px;}
+.tl-connector{width:1px;flex:1;background:var(--border);min-height:40px;}
+.tl-time{font-size:9px;color:var(--green);letter-spacing:.2em;text-transform:uppercase;margin-bottom:4px;}
+.tl-title{font-size:14px;color:#fff;margin-bottom:4px;font-weight:700;}
+.tl-desc{font-family:'Crimson Pro',serif;font-size:14px;color:var(--dim);line-height:1.6;}
+.loading-scene{display:flex;flex-direction:column;align-items:center;gap:1.5rem;padding:2.5rem;background:var(--card);border:1px solid var(--border);border-radius:8px;}
+.spinner{width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-bar-wrap{width:100%;height:2px;background:var(--border);border-radius:1px;}
+.loading-bar-fill{height:100%;background:var(--blue);border-radius:1px;animation:lb 6s ease infinite;box-shadow:0 0 6px var(--blue);}
+@keyframes lb{0%{width:0}40%{width:78%}80%,100%{width:94%}}
+
+#developer{background:#080810;padding:6rem clamp(2rem,8vw,8rem);}
+.jira-board{margin-top:3rem;display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+.jira-col{background:#0d0d18;border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+.jira-col-title{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--dim);padding:.8rem 1rem;border-bottom:1px solid var(--border);}
+.jira-ticket{margin:8px;background:var(--card);border:1px solid var(--border);border-radius:4px;padding:.8rem;font-size:11px;cursor:pointer;transition:all .2s;border-left:3px solid var(--border);}
+.jira-ticket:hover{border-color:var(--blue);border-left-color:var(--blue);transform:translateY(-1px);}
+.jira-ticket.urgent{border-left-color:var(--red);}
+.ticket-id{color:var(--blue);font-size:10px;margin-bottom:4px;}
+.ticket-title{color:var(--text);line-height:1.5;}
+.ticket-meta{color:var(--dim);font-size:10px;margin-top:6px;}
+.standup-section{margin-top:2rem;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:2rem;}
+.standup-title{font-size:10px;letter-spacing:.3em;color:var(--green);text-transform:uppercase;margin-bottom:1.5rem;}
+.standup-item{display:flex;gap:1rem;padding:.8rem 0;border-bottom:1px solid var(--border);align-items:flex-start;}
+.standup-item:last-child{border-bottom:none;}
+.standup-q{color:var(--dim);min-width:180px;font-size:11px;padding-top:2px;}
+.standup-a{color:var(--text);font-family:'Crimson Pro',serif;font-size:15px;}
+
+#retirement{background:#0a0a08;padding:6rem clamp(2rem,8vw,8rem);}
+.retirement-layout{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;margin-top:3rem;}
+.wisdom-cards{display:flex;flex-direction:column;gap:1rem;}
+.wisdom-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:1.2rem 1.5rem;display:flex;gap:1rem;cursor:pointer;transition:all .3s;position:relative;overflow:hidden;}
+.wisdom-card::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,179,71,.05),transparent);opacity:0;transition:opacity .3s;}
+.wisdom-card:hover{border-color:var(--amber);transform:translateX(4px);}
+.wisdom-card:hover::after{opacity:1;}
+.wisdom-num{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--amber);opacity:.3;line-height:1;transition:opacity .3s;}
+.wisdom-card:hover .wisdom-num{opacity:1;}
+.wisdom-text{font-family:'Crimson Pro',serif;font-style:italic;font-size:1rem;color:var(--text);line-height:1.6;padding-top:.4rem;}
+.pea-desk{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:2rem;text-align:center;}
+.desk-ascii{font-size:13px;line-height:1.6;color:var(--amber);margin-bottom:1.5rem;display:inline-block;opacity:.7;}
+.desk-message{font-family:'Crimson Pro',serif;font-style:italic;font-size:1.1rem;color:var(--dim);line-height:1.8;}
+
+.final-message{margin-top:4rem;text-align:center;padding:3rem;border-top:1px solid var(--border);}
+.final-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,4rem);color:#fff;margin-bottom:1rem;}
+.final-sub{font-family:'Crimson Pro',serif;font-style:italic;font-size:1.2rem;color:var(--dim);max-width:500px;margin:0 auto 2rem;line-height:1.8;}
+.badge{display:inline-block;padding:6px 16px;border:1px solid var(--green);color:var(--green);font-size:11px;letter-spacing:.2em;text-transform:uppercase;border-radius:2px;animation:bp 2s ease infinite;}
+@keyframes bp{0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,.4)}50%{box-shadow:0 0 0 8px rgba(0,255,136,0)}}
+
+.coffee-meter{position:fixed;right:56px;bottom:24px;z-index:500;display:flex;flex-direction:column;align-items:center;gap:6px;opacity:0;transition:opacity .5s;}
+.coffee-meter.visible{opacity:1;}
+.coffee-label{font-size:8px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase;writing-mode:vertical-rl;}
+.coffee-bar{width:4px;height:80px;background:var(--border);border-radius:2px;overflow:hidden;position:relative;}
+.coffee-fill{position:absolute;bottom:0;left:0;right:0;background:var(--amber);transition:height .5s;box-shadow:0 0 8px var(--amber);}
+
+.glitch{position:relative;}
+.glitch::before,.glitch::after{content:attr(data-text);position:absolute;top:0;left:0;width:100%;}
+.glitch::before{color:var(--red);animation:g1 3s infinite;clip-path:polygon(0 0,100% 0,100% 45%,0 45%);}
+.glitch::after{color:var(--blue);animation:g2 3s infinite;clip-path:polygon(0 55%,100% 55%,100% 100%,0 100%);}
+@keyframes g1{0%,90%,100%{transform:translate(0)}92%{transform:translate(-3px,1px)}94%{transform:translate(3px,-1px)}96%{transform:translate(-2px,2px)}}
+@keyframes g2{0%,90%,100%{transform:translate(0)}92%{transform:translate(3px,-1px)}94%{transform:translate(-3px,1px)}96%{transform:translate(2px,-2px)}}
+
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .7s,transform .7s;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+.reveal-left{opacity:0;transform:translateX(-40px);transition:opacity .7s,transform .7s;}
+.reveal-left.visible{opacity:1;transform:translateX(0);}
+.reveal-right{opacity:0;transform:translateX(40px);transition:opacity .7s,transform .7s;}
+.reveal-right.visible{opacity:1;transform:translateX(0);}
+
+.tooltip{position:fixed;background:var(--card);border:1px solid var(--green);color:var(--green);font-size:11px;padding:6px 12px;border-radius:4px;pointer-events:none;z-index:8000;opacity:0;transition:opacity .15s;}
+
+@media(max-width:768px){
+  #innocent,.struggle-grid,.grind-layout,.retirement-layout{grid-template-columns:1fr;}
+  .jira-board{grid-template-columns:1fr;}
+  .relatable-cards{grid-template-columns:1fr 1fr;}
+  #pea-character{bottom:10px;left:10px;}
+  .speech-bubble{max-width:160px;font-size:10px;}
+  .pea-wrapper{width:56px;height:70px;}
+}
+@media(max-width:480px){.relatable-cards{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<div class="tooltip" id="tooltip"></div>
+
+<nav>
+  <div class="nav-dot active" data-label="Intro" data-target="hero"></div>
+  <div class="nav-dot" data-label="The Innocent" data-target="innocent"></div>
+  <div class="nav-dot" data-label="The Struggle" data-target="struggle"></div>
+  <div class="nav-dot" data-label="The Grind" data-target="grind"></div>
+  <div class="nav-dot" data-label="The Developer" data-target="developer"></div>
+  <div class="nav-dot" data-label="Retirement" data-target="retirement"></div>
+</nav>
+
+<div class="coffee-meter" id="coffeeMeter">
+  <div class="coffee-label">Energy</div>
+  <div class="coffee-bar"><div class="coffee-fill" id="coffeeFill" style="height:0%"></div></div>
+  <div style="font-size:16px">☕</div>
+</div>
+
+<!-- ===== PEA CHARACTER ===== -->
+<div id="pea-character">
+  <div class="speech-bubble" id="speechBubble">Hi! I'm Pea. Scroll down... my story is about to begin! 👇</div>
+
+  <div class="pea-wrapper state-idle" id="peaWrapper">
+    <!-- ZZZ -->
+    <span class="zzz" style="top:-4px;right:2px;animation-delay:0s;font-size:10px">z</span>
+    <span class="zzz" style="top:-16px;right:8px;animation-delay:.7s;font-size:13px">z</span>
+    <span class="zzz" style="top:-28px;right:14px;animation-delay:1.4s;font-size:16px">Z</span>
+
+    <svg viewBox="0 0 72 90" width="72" height="90" xmlns="http://www.w3.org/2000/svg" overflow="visible">
+
+      <!-- SHADOW -->
+      <ellipse cx="36" cy="87" rx="16" ry="3" fill="rgba(0,0,0,0.25)"/>
+
+      <!-- LEGS -->
+      <g class="pea-leg-l">
+        <rect x="25" y="66" width="8" height="16" rx="4" fill="#5ab33a"/>
+        <ellipse cx="28" cy="82" rx="6" ry="3.5" fill="#1a1a2e"/>
+      </g>
+      <g class="pea-leg-r">
+        <rect x="39" y="66" width="8" height="16" rx="4" fill="#5ab33a"/>
+        <ellipse cx="43" cy="82" rx="6" ry="3.5" fill="#1a1a2e"/>
+      </g>
+
+      <!-- BODY GROUP (bouncing) -->
+      <g class="pea-body">
+
+        <!-- BODY -->
+        <ellipse cx="36" cy="50" rx="20" ry="22" fill="var(--pea)"/>
+        <!-- shirt detail -->
+        <ellipse cx="36" cy="55" rx="15" ry="3.5" fill="rgba(0,0,0,0.07)"/>
+
+        <!-- LAPTOP (on belly) -->
+        <rect x="22" y="62" width="28" height="15" rx="2" fill="#1a1a2e"/>
+        <rect x="23" y="63" width="26" height="12" rx="1" fill="#0a0a18"/>
+        <text x="36" y="72" text-anchor="middle" font-size="5" fill="var(--green)" font-family="monospace">&gt;_</text>
+
+        <!-- LEFT ARM (idle) -->
+        <g style="transform-origin:16px 44px;animation:armIdle 2.2s ease-in-out infinite reverse;">
+          <rect x="8" y="42" width="10" height="18" rx="5" fill="#5ab33a"/>
+          <circle cx="13" cy="61" r="5" fill="#7ed856"/>
+        </g>
+
+        <!-- RIGHT ARM (animated per state) -->
+        <g class="pea-arm-r">
+          <rect x="54" y="40" width="10" height="18" rx="5" fill="#5ab33a"/>
+          <!-- HAND -->
+          <circle cx="59" cy="59" r="5" fill="#7ed856"/>
+          <!-- COFFEE CUP -->
+          <g id="coffeeCup">
+            <rect x="55" y="55" width="9" height="10" rx="2" fill="#7a3f2a"/>
+            <rect x="54" y="54" width="11" height="3" rx="1.5" fill="#9b5030"/>
+            <!-- handle -->
+            <path d="M64 57 Q68 59 64 62" stroke="#9b5030" stroke-width="1.5" fill="none"/>
+            <!-- steam -->
+            <path class="steam" d="M57 54 Q58 49 57 44" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+            <path class="steam2" d="M61 54 Q62 49 61 44" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          </g>
+        </g>
+
+        <!-- HEAD -->
+        <circle cx="36" cy="28" r="20" fill="var(--pea)"/>
+
+        <!-- GRADUATION CAP (shown in innocent chapter) -->
+        <g id="gradCap" opacity="0" style="transition:opacity .5s">
+          <ellipse cx="36" cy="12" rx="17" ry="5" fill="#1a1a2e"/>
+          <rect x="19" y="8" width="34" height="6" rx="2" fill="#111128"/>
+          <rect x="24" y="2" width="24" height="7" rx="2" fill="#1a1a2e"/>
+          <line x1="48" y1="5" x2="55" y2="14" stroke="var(--amber)" stroke-width="1.5"/>
+          <circle cx="56" cy="15" r="2.5" fill="var(--amber)"/>
+        </g>
+
+        <!-- GLASSES (shown in retirement) -->
+        <g id="glasses" opacity="0" style="transition:opacity .5s">
+          <circle cx="27" cy="28" r="8" fill="none" stroke="#aaa" stroke-width="1.5"/>
+          <circle cx="45" cy="28" r="8" fill="none" stroke="#aaa" stroke-width="1.5"/>
+          <line x1="35" y1="28" x2="37" y2="28" stroke="#aaa" stroke-width="1.5"/>
+          <line x1="19" y1="27" x2="15" y2="25" stroke="#aaa" stroke-width="1.5"/>
+          <line x1="53" y1="27" x2="57" y2="25" stroke="#aaa" stroke-width="1.5"/>
+        </g>
+
+        <!-- EYES -->
+        <g class="pea-eye-l">
+          <circle cx="27" cy="28" r="6" fill="#fff"/>
+          <circle cx="28.5" cy="29" r="3.5" fill="#1a1a28"/>
+          <circle cx="29.5" cy="27.5" r="1.2" fill="#fff"/>
+        </g>
+        <g class="pea-eye-r">
+          <circle cx="45" cy="28" r="6" fill="#fff"/>
+          <circle cx="46.5" cy="29" r="3.5" fill="#1a1a28"/>
+          <circle cx="47.5" cy="27.5" r="1.2" fill="#fff"/>
+        </g>
+
+        <!-- EYEBROWS -->
+        <path id="browL" d="M22 21 Q27 19 32 21" stroke="#2a2a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path id="browR" d="M40 21 Q45 19 50 21" stroke="#2a2a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+        <!-- MOUTH -->
+        <path id="mouthPath" d="M29 35 Q36 41 43 35" stroke="#2a2a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+        <!-- CHEEKS -->
+        <circle cx="19" cy="32" r="6" fill="rgba(255,110,110,0.18)"/>
+        <circle cx="53" cy="32" r="6" fill="rgba(255,110,110,0.18)"/>
+
+        <!-- HEADPHONES (shown in grind chapter) -->
+        <g id="headphones" opacity="0" style="transition:opacity .5s">
+          <path d="M16 28 Q16 8 36 8 Q56 8 56 28" stroke="#333350" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <rect x="12" y="26" width="8" height="12" rx="4" fill="#333350"/>
+          <rect x="52" y="26" width="8" height="12" rx="4" fill="#333350"/>
+        </g>
+
+      </g><!-- end pea-body -->
+    </svg>
+  </div>
+</div>
+
+<!-- ====== HERO ====== -->
+<section id="hero">
+  <div class="hero-bg" id="heroBg"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow" id="heroEyebrow">A true story. Mostly.</div>
+    <h1 class="hero-title" id="heroTitle">The Life<br>of <span>Pea</span></h1>
+    <p class="hero-sub" id="heroSub">An unlikely developer. A legendary journey.<br>And an unreasonable amount of coffee.<span class="tcursor"></span></p>
+  </div>
+  <div class="scroll-hint"><span>Scroll to begin</span><div class="scroll-line"></div></div>
+</section>
+
+<!-- ====== INNOCENT ====== -->
+<section id="innocent">
+  <div class="reveal-left">
+    <div class="section-label">Chapter 01</div>
+    <h2 class="section-title glitch" data-text="The Innocent">The Innocent</h2>
+    <p class="section-body">Pea was 19 when they enrolled in Computer Science.<br><br>They had seen a movie where a hacker typed really fast and thought <em>"yeah, I could do that."</em><br><br>Day one. First assignment: <strong style="color:#fff">Print "Hello, World!"</strong></p>
+    <p class="section-body" style="color:var(--dim);font-size:1rem;margin-top:1rem">Pea felt like a god. The machine had listened.<br>This was going to be easy.</p>
+    <button class="run-btn" id="runBtn">▶ &nbsp;Run Code</button>
+  </div>
+  <div class="reveal-right">
+    <div class="terminal-window">
+      <div class="terminal-header">
+        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+        <div class="terminal-title">pea@macbook — bash</div>
+      </div>
+      <div class="terminal-body">
+        <div><span class="t-p">pea@macbook:~$ </span><span style="color:#fff">python3 hello.py</span></div>
+        <div class="t-s">Hello, World!</div>
+        <div style="margin-top:1rem"><span class="t-p">pea@macbook:~$ </span><span id="typingCmd"></span><span class="tcursor" id="termCursor"></span></div>
+        <div id="termOutput"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== STRUGGLE ====== -->
+<section id="struggle">
+  <div class="reveal" style="max-width:600px">
+    <div class="section-label">Chapter 02</div>
+    <h2 class="section-title">The Struggle</h2>
+    <p class="section-body">Week 3. Things got harder. Much harder.<br>Pea met <strong style="color:var(--red)">segfaults</strong>, <strong style="color:var(--red)">null pointers</strong>, and the eternal question: <em>why is nothing ever centered?</em></p>
+  </div>
+  <div class="struggle-grid">
+    <div class="reveal-left">
+      <div class="error-stack">
+        <div style="color:var(--red);font-size:13px;margin-bottom:1rem;font-weight:700">❌ SyntaxError: Unexpected token</div>
+        <div style="color:var(--dim)">  at pea_project/main.js:47</div>
+        <div style="color:var(--dim)">  at <span style="color:var(--amber)">hopes_and_dreams.js:1</span></div>
+        <div style="margin-top:1rem;color:var(--dim)">
+          Stack Overflow results: <span style="color:var(--amber)">2,847</span><br>
+          Helpful ones: <span style="color:var(--red)">0</span><br>
+          Hours debugging: <span style="color:var(--red)">∞</span>
+        </div>
+        <div style="margin-top:1rem;font-family:'Crimson Pro',serif;font-style:italic;color:var(--dim);font-size:14px">"It was a missing semicolon. It's always a missing semicolon."</div>
+      </div>
+      <div style="margin-top:1rem;background:var(--card);border:1px solid var(--border);padding:1.2rem;border-radius:6px">
+        <div style="font-size:10px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase;margin-bottom:.8rem">Coffee Log — Week 3</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:1.4rem">☕☕☕☕☕☕☕☕</div>
+        <div style="font-size:11px;color:var(--dim);margin-top:.8rem;font-family:'Crimson Pro',serif;font-style:italic">Doctor's recommended: 2/day. Pea's average: 8.</div>
+      </div>
+    </div>
+    <div class="reveal-right">
+      <div style="font-size:10px;letter-spacing:.3em;color:var(--dim);text-transform:uppercase;margin-bottom:1rem">Hover to relate</div>
+      <div class="relatable-cards">
+        <div class="rcard"><span class="rcard-emoji">😤</span><div class="rcard-text">"It was working yesterday. I changed nothing."</div></div>
+        <div class="rcard"><span class="rcard-emoji">🤡</span><div class="rcard-text">"Let me just copy this Stack Overflow answer..."</div></div>
+        <div class="rcard"><span class="rcard-emoji">😭</span><div class="rcard-text">"Why is this div not centering?? WHY??"</div></div>
+        <div class="rcard"><span class="rcard-emoji">🧠</span><div class="rcard-text">"I'll rewrite everything from scratch."</div></div>
+        <div class="rcard"><span class="rcard-emoji">☕</span><div class="rcard-text">"One more coffee and I'll figure it out."</div></div>
+        <div class="rcard"><span class="rcard-emoji">🌙</span><div class="rcard-text">"3am and I fixed it. It was a typo."</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== GRIND ====== -->
+<section id="grind">
+  <div class="reveal">
+    <div class="section-label">Chapter 03</div>
+    <h2 class="section-title">The Grind</h2>
+    <p class="section-body" style="max-width:560px">Months passed. Projects were built, broken, rebuilt.<br>Pea's first app had one feature and three critical bugs.<br>But it <em>shipped.</em> Sort of.</p>
+  </div>
+  <div class="grind-layout">
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-line"><div class="tl-dot"></div><div class="tl-connector"></div></div>
+        <div class="tl-content"><div class="tl-time">Month 1</div><div class="tl-title">First App</div><div class="tl-desc">Has a button. Button does nothing. Pea is proud.</div></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-line"><div class="tl-dot"></div><div class="tl-connector"></div></div>
+        <div class="tl-content"><div class="tl-time">Month 3</div><div class="tl-title">First Todo App™</div><div class="tl-desc">Couldn't delete todos. The irony was noted.</div></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-line"><div class="tl-dot"></div><div class="tl-connector"></div></div>
+        <div class="tl-content"><div class="tl-time">Month 6</div><div class="tl-title">First Pull Request</div><div class="tl-desc">137 comments. 1 merge conflict that took 4 hours. Pea cried, then committed.</div></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-line"><div class="tl-dot"></div><div class="tl-connector"></div></div>
+        <div class="tl-content"><div class="tl-time">Month 12</div><div class="tl-title">First Internship</div><div class="tl-desc">Real codebase. 200,000 lines. Zero docs. Googled everything after every meeting.</div></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-line"><div class="tl-dot" style="background:var(--amber);box-shadow:0 0 8px var(--amber)"></div></div>
+        <div class="tl-content"><div class="tl-time">Month 18</div><div class="tl-title" style="color:var(--amber)">Something clicked.</div><div class="tl-desc">Fixed a prod bug in 10 minutes. Felt like a wizard. Had coffee to celebrate.</div></div>
+      </div>
+    </div>
+    <div class="reveal-right">
+      <div class="loading-scene">
+        <div class="spinner"></div>
+        <div style="width:100%">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <span style="font-size:11px;color:var(--dim);transition:opacity .3s" id="loadingText">Compiling Pea's project...</span>
+            <span style="font-size:10px;color:var(--dim)">94%</span>
+          </div>
+          <div class="loading-bar-wrap"><div class="loading-bar-fill"></div></div>
+        </div>
+        <div style="font-size:10px;color:var(--red)">⚠ ETA: Unknown. Has been unknown for 3 days.</div>
+        <div style="font-family:'Crimson Pro',serif;font-style:italic;font-size:13px;color:var(--dim);text-align:center;line-height:1.6">"The last 6% always takes longest.<br>Nobody knows why. Nobody ever will."</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== DEVELOPER ====== -->
+<section id="developer">
+  <div class="reveal">
+    <div class="section-label">Chapter 04</div>
+    <h2 class="section-title">The Developer</h2>
+    <p class="section-body" style="max-width:580px">Pea got the job. <strong style="color:var(--green)">Software Engineer — Level 1.</strong><br>First day: 6hr onboarding. Second day: 14 Jira tickets.<br>The coffee machine became Pea's closest colleague.</p>
+  </div>
+  <div class="jira-board reveal">
+    <div class="jira-col">
+      <div class="jira-col-title">📋 To Do (14)</div>
+      <div class="jira-ticket urgent"><div class="ticket-id">PEA-001 🔴 CRITICAL</div><div class="ticket-title">Production is down. Fix immediately.</div><div class="ticket-meta">Due: yesterday</div></div>
+      <div class="jira-ticket"><div class="ticket-id">PEA-002</div><div class="ticket-title">Add dark mode (breaks light mode)</div><div class="ticket-meta">Due: "ASAP"</div></div>
+      <div class="jira-ticket"><div class="ticket-id">PEA-003</div><div class="ticket-title">Refactor entire auth module</div><div class="ticket-meta">Points: 1 (it's not 1 point)</div></div>
+    </div>
+    <div class="jira-col">
+      <div class="jira-col-title">🔄 In Progress (1)</div>
+      <div class="jira-ticket"><div class="ticket-id">PEA-047</div><div class="ticket-title">Fix button color (3 weeks in progress)</div><div class="ticket-meta">"it's complicated"</div></div>
+    </div>
+    <div class="jira-col">
+      <div class="jira-col-title">✅ Done (1)</div>
+      <div class="jira-ticket"><div class="ticket-id">PEA-000</div><div class="ticket-title">Set up dev environment</div><div class="ticket-meta">Took 2 days · Closed in triumph</div></div>
+    </div>
+  </div>
+  <div class="standup-section reveal">
+    <div class="standup-title">☀ Daily Standup — Pea's Report</div>
+    <div class="standup-item"><div class="standup-q">Yesterday I did:</div><div class="standup-a">Investigated PEA-001. Went very deep into the codebase. Learned a lot about how not to write database queries.</div></div>
+    <div class="standup-item"><div class="standup-q">Today I will:</div><div class="standup-a">Fix PEA-001. For real this time. Have already had 3 coffees. Feeling optimistic.</div></div>
+    <div class="standup-item"><div class="standup-q">Blockers:</div><div class="standup-a">The codebase. The previous dev left no comments and is "unreachable." Mild existential dread.</div></div>
+  </div>
+</section>
+
+<!-- ====== RETIREMENT ====== -->
+<section id="retirement">
+  <div class="reveal">
+    <div class="section-label">Chapter 05 — Final Chapter</div>
+    <h2 class="section-title" style="color:var(--amber)">The Legend</h2>
+    <p class="section-body" style="max-width:600px">35 years later. Pea was <strong style="color:var(--amber)">Senior Principal Architect Emeritus.</strong><br>Nobody knew what that meant, including Pea.<br>Then one Friday, Pea closed the laptop for the last time.</p>
+  </div>
+  <div class="retirement-layout">
+    <div class="wisdom-cards reveal-left">
+      <div style="font-size:10px;letter-spacing:.3em;color:var(--dim);text-transform:uppercase;margin-bottom:1rem">Pea's Wisdom — 35 Years Distilled</div>
+      <div class="wisdom-card"><div class="wisdom-num">01</div><div class="wisdom-text">"It works on my machine" is a valid shipping strategy. Until it isn't.</div></div>
+      <div class="wisdom-card"><div class="wisdom-num">02</div><div class="wisdom-text">The best code is code you don't have to write.</div></div>
+      <div class="wisdom-card"><div class="wisdom-num">03</div><div class="wisdom-text">Coffee is not a crutch. It is the load-bearing wall of software engineering.</div></div>
+      <div class="wisdom-card"><div class="wisdom-num">04</div><div class="wisdom-text">When in doubt, turn it off and on again. Works 60% of the time, every time.</div></div>
+      <div class="wisdom-card"><div class="wisdom-num">05</div><div class="wisdom-text">The bug you spent 3 days finding was a missing comma. The universe is indifferent.</div></div>
+    </div>
+    <div class="reveal-right">
+      <div class="pea-desk">
+        <pre class="desk-ascii">
+    ┌─────────────────┐
+    │  📺  💻  ☕  📚  │
+    │   Pea's Desk    │
+    │   1989 — 2024   │
+    └────────┬────────┘
+             │  ~~~~
+        </pre>
+        <div class="desk-message">
+          On Pea's last day, one sticky note remained:<br><br>
+          <strong style="color:var(--amber);font-size:1.2rem">"The README is lying.<br>The comments are guesses.<br>Good luck. Have coffee."</strong><br><br>
+          <span style="color:var(--dim)">— Pea, Developer, Legend, Gone Fishing</span>
+        </div>
+      </div>
+      <div style="margin-top:1.5rem;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:1.5rem">
+        <div style="font-size:10px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase;margin-bottom:1rem">Retirement Stats</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;text-align:center">
+          <div><div style="font-family:'Bebas Neue';font-size:2.5rem;color:var(--amber)">47,000</div><div style="font-size:10px;color:var(--dim)">Commits pushed</div></div>
+          <div><div style="font-family:'Bebas Neue';font-size:2.5rem;color:var(--amber)">~82,000</div><div style="font-size:10px;color:var(--dim)">Coffees consumed</div></div>
+          <div><div style="font-family:'Bebas Neue';font-size:2.5rem;color:var(--red)">3</div><div style="font-size:10px;color:var(--dim)">READMEs actually written</div></div>
+          <div><div style="font-family:'Bebas Neue';font-size:2.5rem;color:var(--green)">1</div><div style="font-size:10px;color:var(--dim)">Side project finished*</div></div>
+        </div>
+        <div style="font-size:10px;color:var(--dim);margin-top:1rem;font-style:italic">*Definition of "finished" generously applied</div>
+      </div>
+    </div>
+  </div>
+  <div class="final-message reveal">
+    <div class="final-title">Every Developer's Journey</div>
+    <div class="final-sub">Starts with a <code style="color:var(--green)">Hello, World.</code><br>Ends with sticky notes and a broken build in production.<br>And somewhere in between — something beautiful gets made.</div>
+    <div class="badge">// The End — or is it?</div>
+  </div>
+</section>
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+// CURSOR
+const cursor=document.getElementById('cursor'),cursorRing=document.getElementById('cursorRing');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cursor.style.left=mx+'px';cursor.style.top=my+'px';});
+(function loop(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;cursorRing.style.left=rx+'px';cursorRing.style.top=ry+'px';requestAnimationFrame(loop);})();
+document.querySelectorAll('button,.rcard,.wisdom-card,.jira-ticket,.nav-dot').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cursor.style.transform='translate(-50%,-50%) scale(2)';cursorRing.style.borderColor='var(--amber)';});
+  el.addEventListener('mouseleave',()=>{cursor.style.transform='translate(-50%,-50%) scale(1)';cursorRing.style.borderColor='var(--green)';});
+});
+
+// PROGRESS
+window.addEventListener('scroll',()=>{
+  document.getElementById('progressBar').style.width=((window.scrollY/(document.body.scrollHeight-window.innerHeight))*100)+'%';
+});
+
+// FLOATING CODE BG
+const hb=document.getElementById('heroBg');
+['const pea = new Developer();','while(!done){code();}','git commit -m "fix"','console.log("why");','// TODO: fix later','undefined is not a function','npm install hope','<div class="please-center">','SELECT * FROM coffee;','if(tired) drink(coffee);','return 42; // no idea','git push --force','works on my machine','Error: Cannot read property'].forEach(txt=>{
+  const el=document.createElement('div');
+  el.className='floating-code';
+  el.textContent=txt;
+  el.style.cssText=`left:${Math.random()*100}vw;animation-duration:${12+Math.random()*20}s;animation-delay:${-Math.random()*20}s;font-size:${10+Math.random()*5}px;`;
+  hb.appendChild(el);
+});
+
+// HERO ANIM
+gsap.timeline({delay:.3})
+  .to('#heroEyebrow',{opacity:1,duration:.6,ease:'power2.out'})
+  .to('#heroTitle',{opacity:1,duration:.7,ease:'power3.out'},'-=.3')
+  .to('#heroSub',{opacity:1,duration:.6,ease:'power2.out'},'-=.3');
+
+// PARALLAX
+gsap.to(hb,{yPercent:40,ease:'none',scrollTrigger:{trigger:'#hero',start:'top top',end:'bottom top',scrub:true}});
+
+// COFFEE METER
+const cm=document.getElementById('coffeeMeter'),cf=document.getElementById('coffeeFill');
+ScrollTrigger.create({trigger:'#struggle',start:'top 80%',onEnter:()=>cm.classList.add('visible')});
+window.addEventListener('scroll',()=>{
+  const p=Math.min(100,(window.scrollY/(document.body.scrollHeight-window.innerHeight))*130);
+  cf.style.height=p+'%';
+  const c=p>80?'var(--red)':'var(--amber)';
+  cf.style.background=c;cf.style.boxShadow=`0 0 8px ${c}`;
+});
+
+// REVEAL
+const obs=new IntersectionObserver(entries=>{entries.forEach((e,i)=>{if(e.isIntersecting)setTimeout(()=>e.target.classList.add('visible'),i*80);});},{threshold:.12});
+document.querySelectorAll('.reveal,.reveal-left,.reveal-right').forEach(el=>obs.observe(el));
+const tlObs=new IntersectionObserver(entries=>{entries.forEach((e,i)=>{if(e.isIntersecting)setTimeout(()=>e.target.classList.add('visible'),i*150);});},{threshold:.1});
+document.querySelectorAll('.tl-item').forEach(el=>tlObs.observe(el));
+
+// NAV
+const navDots=document.querySelectorAll('.nav-dot');
+const sectionIds=['hero','innocent','struggle','grind','developer','retirement'];
+navDots.forEach(d=>d.addEventListener('click',()=>document.getElementById(d.dataset.target).scrollIntoView({behavior:'smooth'})));
+window.addEventListener('scroll',()=>{
+  const mid=window.scrollY+window.innerHeight/2;
+  sectionIds.forEach((id,i)=>{const el=document.getElementById(id);if(!el)return;if(mid>=el.offsetTop&&mid<el.offsetTop+el.offsetHeight){navDots.forEach(d=>d.classList.remove('active'));navDots[i].classList.add('active');}});
+});
+
+// RUN BUTTON
+const errors=[
+  {cmd:'python3 main.py',out:'<span style="color:var(--red)">TypeError: \'NoneType\' object is not subscriptable</span><br><span style="color:var(--dim)">  File "main.py", line 23</span>'},
+  {cmd:'python3 main.py --debug',out:'<span style="color:var(--red)">Same error. With more lines.</span>'},
+  {cmd:'python3 main.py --please',out:'<span style="color:var(--amber)">Unknown flag: --please</span><br><span style="color:var(--dim)">The computer doesn\'t care about your feelings.</span>'},
+  {cmd:'git blame',out:'<span style="color:var(--dim)">Line 23: </span><span style="color:var(--amber)">pea</span><span style="color:var(--dim)"> 3 days ago — "fix"</span><br><span style="color:var(--red)">It was Pea. It was always Pea.</span>'},
+  {cmd:'sudo fix --everything',out:'<span style="color:var(--green)">Permission granted.</span><br><span style="color:var(--red)">Just kidding. Nothing is fixed.</span>'},
+];
+let rc=0;
+document.getElementById('runBtn').addEventListener('click',()=>{
+  const m=errors[rc%errors.length];rc++;
+  const tc=document.getElementById('typingCmd'),to=document.getElementById('termOutput'),cur=document.getElementById('termCursor');
+  to.innerHTML='';tc.textContent='';
+  let i=0;const t=setInterval(()=>{tc.textContent=m.cmd.slice(0,i++);if(i>m.cmd.length){clearInterval(t);cur.style.display='none';setTimeout(()=>{to.innerHTML='<div style="margin-top:.5rem">'+m.out+'</div>';cur.style.display='inline-block';tc.textContent='';},400);}},60);
+});
+
+// LOADING TEXT
+const lts=['Compiling Pea\'s project...','Resolving 847 dependencies...','Installing node_modules (4.2GB)...','Searching Stack Overflow...','Questioning life choices...','Still compiling...','Coffee break initiated...','Building the future...'];
+let li=0;const ltel=document.getElementById('loadingText');
+setInterval(()=>{li=(li+1)%lts.length;ltel.style.opacity='0';setTimeout(()=>{ltel.textContent=lts[li];ltel.style.opacity='1';ltel.style.transition='opacity .3s';},300);},3000);
+
+// TOOLTIP
+const tip=document.getElementById('tooltip');
+document.querySelectorAll('.jira-ticket').forEach(t=>{
+  t.addEventListener('mouseenter',()=>{tip.textContent='Est: 1 story point. Actual: 2 weeks.';tip.style.opacity='1';});
+  t.addEventListener('mousemove',e=>{tip.style.left=(e.clientX+12)+'px';tip.style.top=(e.clientY-30)+'px';});
+  t.addEventListener('mouseleave',()=>{tip.style.opacity='0';});
+});
+
+// ============ PEA CHARACTER SYSTEM ============
+const peaWrapper=document.getElementById('peaWrapper');
+const speechBubble=document.getElementById('speechBubble');
+const gradCap=document.getElementById('gradCap');
+const glasses=document.getElementById('glasses');
+const headphones=document.getElementById('headphones');
+const mouthPath=document.getElementById('mouthPath');
+const browL=document.getElementById('browL');
+const browR=document.getElementById('browR');
+
+const chapters = [
+  {
+    id:'hero',
+    state:'state-idle',
+    cap:false, glasses:false, headphones:false,
+    mouth:'M29 35 Q36 41 43 35',
+    browL:'M22 21 Q27 19 32 21',
+    browR:'M40 21 Q45 19 50 21',
+    lines:[
+      "Hi! I'm Pea! 👋",
+      "This is my story.",
+      "Spoiler: lots of coffee. ☕",
+      "Scroll down to begin!"
+    ]
+  },
+  {
+    id:'innocent',
+    state:'state-typing',
+    cap:true, glasses:false, headphones:false,
+    mouth:'M27 34 Q36 43 45 34',
+    browL:'M22 20 Q27 17 32 20',
+    browR:'M40 20 Q45 17 50 20',
+    lines:[
+      "Hello World! I DID IT! 🎉",
+      "I'm basically a hacker now.",
+      "How hard can it really be?",
+      "...famous last words. 😬"
+    ]
+  },
+  {
+    id:'struggle',
+    state:'state-coffee',
+    cap:false, glasses:false, headphones:false,
+    mouth:'M29 38 Q36 34 43 38',
+    browL:'M22 22 Q27 25 32 22',
+    browR:'M40 22 Q45 25 50 22',
+    lines:[
+      "WHY WON'T IT WORK. 😤",
+      "Stack Overflow is my therapist.",
+      "6 hours. It was a semicolon.",
+      "Send coffee. Send help. 😭"
+    ]
+  },
+  {
+    id:'grind',
+    state:'state-typing',
+    cap:false, glasses:false, headphones:true,
+    mouth:'M29 35 Q36 39 43 35',
+    browL:'M22 21 Q27 19 32 21',
+    browR:'M40 21 Q45 19 50 21',
+    lines:[
+      "Okay. Getting better. Slowly.",
+      "137 PR comments. I survived.",
+      "Something is starting to click. 🤔",
+      "I think I'm actually a dev now."
+    ]
+  },
+  {
+    id:'developer',
+    state:'state-coffee',
+    cap:false, glasses:false, headphones:false,
+    mouth:'M27 34 Q36 42 45 34',
+    browL:'M22 20 Q27 18 32 20',
+    browR:'M40 20 Q45 18 50 20',
+    lines:[
+      "I got the job!! 🎉",
+      "14 Jira tickets on day 2. Normal?",
+      "Prod was down. I fixed it.",
+      "...mostly. It's complicated. ☕"
+    ]
+  },
+  {
+    id:'retirement',
+    state:'state-sleeping',
+    cap:false, glasses:true, headphones:false,
+    mouth:'M29 36 Q36 40 43 36',
+    browL:'M22 21 Q27 19 32 21',
+    browR:'M40 21 Q45 19 50 21',
+    lines:[
+      "35 years. 82,000 coffees.",
+      "I've seen things you wouldn't believe.",
+      "The README is always lying.",
+      "Time to go fishing. 🎣"
+    ]
+  }
+];
+
+let currentChapterId = null;
+let lineTimer = null;
+let lineIdx = 0;
+
+function applyChapter(ch) {
+  if(currentChapterId === ch.id) return;
+  currentChapterId = ch.id;
+
+  // State class
+  peaWrapper.className = 'pea-wrapper ' + ch.state;
+
+  // Accessories
+  gradCap.style.opacity = ch.cap ? '1' : '0';
+  glasses.setAttribute('opacity', ch.glasses ? '1' : '0');
+  glasses.style.opacity = ch.glasses ? '1' : '0';
+  headphones.style.opacity = ch.headphones ? '1' : '0';
+
+  // Face
+  mouthPath.setAttribute('d', ch.mouth);
+  browL.setAttribute('d', ch.browL);
+  browR.setAttribute('d', ch.browR);
+
+  // Lines
+  clearInterval(lineTimer);
+  lineIdx = 0;
+  showLine(ch.lines[0]);
+  lineTimer = setInterval(()=>{
+    lineIdx = (lineIdx + 1) % ch.lines.length;
+    showLine(ch.lines[lineIdx]);
+  }, 3800);
+
+  // Bounce Pea in
+  gsap.fromTo('#pea-character', {x:-20, opacity:0},{x:0, opacity:1, duration:.5, ease:'back.out(1.7)'});
+}
+
+function showLine(text) {
+  speechBubble.classList.remove('visible');
+  setTimeout(()=>{ speechBubble.textContent = text; speechBubble.classList.add('visible'); }, 220);
+}
+
+// Observe sections
+const chapterObs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting && e.intersectionRatio > 0.35) {
+      const ch = chapters.find(c=>c.id===e.target.id);
+      if(ch) applyChapter(ch);
+    }
+  });
+},{threshold:0.35});
+
+sectionIds.forEach(id=>{ const el=document.getElementById(id); if(el) chapterObs.observe(el); });
+
+// Init on load
+setTimeout(()=>{
+  speechBubble.classList.add('visible');
+  applyChapter(chapters[0]);
+}, 800);
+
+// Init cap hidden
+gradCap.style.opacity='0';
+gradCap.style.transition='opacity .5s';
+glasses.style.opacity='0';
+glasses.style.transition='opacity .5s';
+headphones.style.opacity='0';
+headphones.style.transition='opacity .5s';
+</script>
+</body>
+</html>
